@@ -7,6 +7,7 @@ const { GridFsStorage } = require("multer-gridfs-storage");
 const Grid = require("gridfs-stream");
 const methodOverride = require("method-override");
 const bodyParser = require("body-parser");
+const ObjectID = require("mongodb").ObjectId;
 
 const app = express();
 //Middleware
@@ -54,13 +55,35 @@ const upload = multer({ storage });
 //@Route GET /
 //@desc loads form
 app.get("/", (req, res) => {
-  res.render("index");
+  // res.render("index");
+  gfs.files.find().toArray((err, files) => {
+    //checking for files exist or not
+    if (!files || files.length === 0) {
+      res.render("index", { files: false });
+    } else {
+      files.map((file) => {
+        if (
+          file.contentType === "image/jepg" ||
+          file.contentType === "image/jpg" ||
+          file.contentType === "image/png"
+        ) {
+          file.isImage = true;
+        } else {
+          file.isImage = false;
+        }
+      });
+      res.render("index", { files: files });
+    }
+    //files exist
+    // return res.json(files);
+  });
 });
 
 //@Route POST /upload
 //@desc uploads file to db
 app.post("/upload", upload.single("file"), (req, res) => {
-  res.json({ file: req.file });
+  // res.json({ file: req.file });
+  res.redirect("/");
 });
 
 //@route GET /files
@@ -104,7 +127,7 @@ app.get("/image/:filename", (req, res) => {
         msg: "No file exist",
       });
     }
-    console.log("File exist");
+    // console.log("File exist");
     //files exist
     // return res.json(file);
     //check if image
@@ -120,6 +143,15 @@ app.get("/image/:filename", (req, res) => {
       res.status(404).json({ msg: "This is not image file" });
     }
   });
+});
+
+// @route DELETE /files/:id
+// @desc Delete file
+app.delete("/files/:id", async (req, res) => {
+  await gridfsBucket
+    .delete(ObjectID(req.params.id))
+    .then(() => res.redirect("/"))
+    .catch((e) => console.log(e));
 });
 
 const port = 5000;
