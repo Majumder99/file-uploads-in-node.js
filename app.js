@@ -154,6 +154,31 @@ app.delete("/files/:id", async (req, res) => {
     .catch((e) => console.log(e));
 });
 
+// @route DOWNLOAD /files/:id
+// @desc download file
+app.get("/download/:id", async (req, res) => {
+  gfs
+    .collection("uploads")
+    .findOne({ _id: ObjectID(req.params.id) }, (err, file) => {
+      if (err) {
+        // report the error
+        console.log(err);
+      } else {
+        // detect the content type and set the appropriate response headers.
+        let mimeType = file.contentType;
+        if (!mimeType) {
+          mimeType = mime.lookup(file.filename);
+        }
+        res.set({
+          "Content-Type": mimeType,
+          "Content-Disposition": "attachment; filename=" + file.filename,
+        });
+        const readStream = gridfsBucket.openDownloadStream(file._id);
+        readStream.pipe(res);
+      }
+    });
+});
+
 const port = 5000;
 app.listen(port, () => {
   console.log(`Listen on ${port}`);

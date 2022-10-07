@@ -37,13 +37,30 @@
             <% if(file.isImage){ %>
             <img src="image/<%= file.filename %>" alt="Image" />
             <% }else{ %> <%= file.filename %> <% } %>
-            <form action="/files/<%= file._id %>?_method=DELETE" method="post">
+            <div
+              class="d-flex flex-row justify-content-center align-items-center mt-2"
+            >
+              <form
+                action="/files/<%= file._id %>?_method=DELETE"
+                method="post"
+                class="me-3"
+              >
+                <button class="btn btn-danger" type="submit">Delete</button>
+              </form>
+              <form action="/download/<%= file._id %>" method="get">
+                <button class="btn btn-success" type="submit">Download</button>
+              </form>
+            </div>
+            <!-- <form action="/files/<%= file._id %>?_method=DELETE" method="post">
               <div class="row">
-                <button class="btn btn-danger mt-4 btn-block" type="submit">
-                  Delete
-                </button>
+                <button class="btn btn-danger" type="submit">Delete</button>
               </div>
             </form>
+            <form action="/download/<%= file._id %>" method="get" class="mt-2">
+              <div class="row">
+                <button class="btn btn-success" type="submit">Download</button>
+              </div>
+            </form> -->
           </div>
           <% }) %> <% }else{ %>
           <p>No files to show</p>
