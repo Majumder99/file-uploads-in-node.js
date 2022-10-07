@@ -21,8 +21,11 @@ const mongoURI =
 //create connection
 const conn = mongoose.createConnection(mongoURI);
 //init gfs
-let gfs;
+let gfs, gridfsBucket;
 conn.once("open", () => {
+  gridfsBucket = new mongoose.mongo.GridFSBucket(conn.db, {
+    bucketName: "uploads",
+  });
   gfs = Grid(conn.db, mongoose.mongo);
   gfs.collection("uploads");
 });
@@ -58,6 +61,65 @@ app.get("/", (req, res) => {
 //@desc uploads file to db
 app.post("/upload", upload.single("file"), (req, res) => {
   res.json({ file: req.file });
+});
+
+//@route GET /files
+//@desc Display all fiels in JSON
+app.get("/files", (req, res) => {
+  gfs.files.find().toArray((err, files) => {
+    //checking for files exist or not
+    if (!files || files.length === 0) {
+      return res.status(404).json({
+        err,
+        msg: "No files exist",
+      });
+    }
+    //files exist
+    return res.json(files);
+  });
+});
+
+//@route GET /files/:filename
+//@desc Display distinct file in JSON
+app.get("/files/:filename", (req, res) => {
+  gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
+    if (!file) {
+      return res.status(404).json({
+        err,
+        msg: "No file exist",
+      });
+    }
+    //files exist
+    return res.json(file);
+  });
+});
+
+//@route GET /image/:filename
+//@desc Display distinct file in JSON
+app.get("/image/:filename", (req, res) => {
+  gfs.files.findOne({ filename: req.params.filename }, (err, file) => {
+    if (!file) {
+      return res.status(404).json({
+        err,
+        msg: "No file exist",
+      });
+    }
+    console.log("File exist");
+    //files exist
+    // return res.json(file);
+    //check if image
+    if (
+      file.contentType === "image/jepg" ||
+      file.contentType === "image/jpg" ||
+      file.contentType === "image/png"
+    ) {
+      // Read output stream
+      const readStream = gridfsBucket.openDownloadStream(file._id);
+      readStream.pipe(res);
+    } else {
+      res.status(404).json({ msg: "This is not image file" });
+    }
+  });
 });
 
 const port = 5000;
